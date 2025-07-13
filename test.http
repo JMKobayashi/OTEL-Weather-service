@@ -1,0 +1,30 @@
+### Teste do Serviço A - Health Check
+GET http://localhost:8080/health
+
+### Teste do Serviço B - Health Check
+GET http://localhost:8081/health
+
+### Teste do Serviço A - CEP válido
+POST http://localhost:8080/cep
+Content-Type: application/json
+
+{
+    "cep": "01310900"
+}
+
+### Teste do Serviço A - CEP inválido
+POST http://localhost:8080/cep
+Content-Type: application/json
+
+{
+    "cep": "123"
+}
+
+### Teste do Serviço B diretamente - CEP válido
+GET http://localhost:8081/weather/01310900
+
+### Teste do Serviço B diretamente - CEP inválido
+GET http://localhost:8081/weather/123
+
+### Teste do Serviço B diretamente - CEP inexistente
+GET http://localhost:8081/weather/99999999 

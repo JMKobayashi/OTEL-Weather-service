@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # OTEL Collector
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    restart: always
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "1888:1888"   # pprof extension
+      - "8888:8888"   # Prometheus metrics exposed by the collector
+      - "8889:8889"   # Prometheus exporter metrics
+      - "13133:13133" # health_check extension
+      - "4317:4317"   # OTLP gRPC receiver
+      - "55679:55679" # zpages extension
+    networks:
+      - otel-network
+
+  # Zipkin
+  zipkin:
+    image: openzipkin/zipkin:latest
+    restart: always
+    ports:
+      - "9411:9411"
+    networks:
+      - otel-network
+
+  # Service A (CEP Validator)
+  service-a:
+    build:
+      context: .
+      dockerfile: ./service-a/Dockerfile
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - WEATHER_SERVICE_URL=http://service-b:8081
+    depends_on:
+      - otel-collector
+    networks:
+      - otel-network
+
+  # Service B (Weather Service)
+  service-b:
+    build:
+      context: .
+      dockerfile: ./service-b/Dockerfile
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - WEATHER_API_KEY=${WEATHER_API_KEY}
+    depends_on:
+      - otel-collector
+    networks:
+      - otel-network
+
+networks:
+  otel-network:
+    driver: bridge 
